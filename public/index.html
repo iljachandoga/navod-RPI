@@ -1,1 +1,141 @@
 
+---
+
+### 2. **HTML – `coolify_rpi_guide.html`**
+
+```html
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Návod: Coolify na Raspberry Pi</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+    h1, h2, h3 { color: #2c3e50; }
+    pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    code { background: #eee; padding: 2px 5px; border-radius: 3px; }
+    table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 10px; text-align: left; }
+    .note { background: #e8f4f8; padding: 10px; border-left: 4px solid #3498db; margin: 15px 0; }
+  </style>
+</head>
+<body>
+  <h1>📚 Návod: Nastavenie Coolify na Raspberry Pi</h1>
+
+  <h2>🔧 Základné informácie</h2>
+  <p>
+    Coolify je nástroj na samospravované nasadenie aplikácií.
+    Môže bežať priamo na RPi (<strong>Localhost</strong>) alebo spravovať <strong>vzdialené servery (Remote)</strong>.
+    SSH kľúče sú kľúčové pre bezpečný prístup bez hesla.
+  </p>
+
+  <hr>
+
+  <h2>🔐 1. Generovanie SSH kľúča (na PC)</h2>
+  <p>Spusti v termináli:</p>
+  <pre>ssh-keygen -t ed25519 -C "tvoje_meno@domena.sk"</pre>
+  <ul>
+    <li><strong>Uloženie:</strong> `~/.ssh/id_ed25519` (stlač Enter)</li>
+    <li><strong>Passphrase:</strong> môžeš nechať prázdnu</li>
+  </ul>
+  <p><strong>Vytvorí sa:</strong></p>
+  <ul>
+    <li><code>id_ed25519</code> → súkromný kľúč (na PC)</li>
+    <li><code>id_ed25519.pub</code> → verejný kľúč (na RPi)</li>
+  </ul>
+
+  <h2>📤 2. Prenos verejného kľúča na RPi</h2>
+  <h3>Spôsob A: Automaticky (odporúčané)</h3>
+  <pre>ssh-copy-id -i ~/.ssh/id_ed25519.pub pi@192.168.100.8</pre>
+  <p>Zadaj heslo používateľa <code>pi</code>.</p>
+
+  <h3>Spôsob B: Manuálne</h3>
+  <p>Na RPi:</p>
+  <pre>mkdir -p ~/.ssh
+nano ~/.ssh/authorized_keys</pre>
+  <p>Vlož obsah súboru <code>id_ed25519.pub</code> z PC. Ulož: <code>Ctrl+O</code> → Enter → <code>Ctrl+X</code>.</p>
+
+  <h2>🔑 3. Nastavenie oprávnení na RPi</h2>
+  <pre>chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys</pre>
+
+  <h2>🧪 4. Test pripojenia</h2>
+  <p>Na PC:</p>
+  <pre>ssh -i ~/.ssh/id_ed25519 pi@192.168.100.8</pre>
+  <p>Ak si prihlásil bez hesla → všetko funguje!</p>
+
+  <div class="note">
+    <p><strong>Poznámka:</strong> Ak chceš použiť <code>root</code>, uprav na RPi:</p>
+    <pre>sudo nano /etc/ssh/sshd_config</pre>
+    <p>Nastav:</p>
+    <pre>PermitRootLogin yes</pre>
+    <p>Potom reštartuj SSH:</p>
+    <pre>sudo systemctl restart ssh</pre>
+  </div>
+
+  <h2>🖥️ 5. Nastavenie Remote Server v Coolify</h2>
+  <table>
+    <tr><th>Pole</th><th>Hodnota</th></tr>
+    <tr><td>Host</td><td>192.168.100.8</td></tr>
+    <tr><td>User</td><td>pi</td></tr>
+    <tr><td>Port</td><td>22</td></tr>
+    <tr><td>Private Key</td><td>Obsah <code>~/.ssh/id_ed25519</code> (z PC)</td></tr>
+  </table>
+  <p><strong>💡 Coolify nepoužíva <code>coolify.pem</code>, ak si ho nevytvoril – použi svoj vlastný kľúč.</strong></p>
+
+  <h2>🐳 6. Docker príkazy</h2>
+  <table>
+    <tr><th>Príkaz</th><th>Popis</th></tr>
+    <tr><td><code>docker ps</code></td><td>Bežiace kontajnery</td></tr>
+    <tr><td><code>docker ps -a</code></td><td>Všetky kontajnery</td></tr>
+    <tr><td><code>docker logs -f <id></code></td><td>Logy kontajnera</td></tr>
+    <tr><td><code>docker images</code></td><td>Zoznam obrazov</td></tr>
+    <tr><td><code>docker volume ls</code></td><td>Zoznam úložísk</td></tr>
+    <tr><td><code>docker volume rm <názov></code></td><td>Zmazanie úložiska</td></tr>
+    <tr><td><code>docker rmi <image></code></td><td>Zmazanie obrazu</td></tr>
+  </table>
+
+  <h2>🛠️ 7. Docker Compose (v <code>~/.coolify</code>)</h2>
+  <table>
+    <tr><th>Príkaz</th><th>Popis</th></tr>
+    <tr><td><code>docker compose up -d</code></td><td>Spusti služby</td></tr>
+    <tr><td><code>docker compose down</code></td><td>Zastav kontajnery</td></tr>
+    <tr><td><code>docker compose restart</code></td><td>Reštartuj</td></tr>
+    <tr><td><code>docker compose logs -f</code></td><td>Live logy</td></tr>
+  </table>
+
+  <h2>🔄 8. Reset Coolify (čistá inštalácia)</h2>
+  <p>Na RPi:</p>
+  <pre>cd ~/.coolify
+docker compose down
+docker volume rm coolify_db coolify_appdata
+docker compose up -d</pre>
+  <p>Otvor v prehliadači: <a href="http://192.168.100.8:8000">http://192.168.100.8:8000</a> → nový setup</p>
+
+  <h2>🧩 9. Dôležité poznámky</h2>
+  <ul>
+    <li><strong>Localhost:</strong> žiadny SSH kľúč sa nevytvorí – Coolify beží priamo na RPi.</li>
+    <li><strong>Remote Server:</strong> Coolify môže vygenerovať kľúč, ale odporúča sa použiť vlastný.</li>
+    <li>Súbor <code>coolify.pem</code> je vo vnútri Docker kontajnera – nie na tvojom PC.</li>
+    <li>Na PC použi svoj <code>id_ed25519</code> ako private key v Coolify.</li>
+  </ul>
+
+  <h2>🛑 10. Riešenie problémov</h2>
+  <h3>❌ Nejde SSH?</h3>
+  <pre>sudo systemctl status ssh
+sudo ss -tulnp | grep :22</pre>
+
+  <h3>❌ Nejde Coolify?</h3>
+  <pre>curl http://localhost:8000
+sudo ss -tulnp | grep 8000</pre>
+
+  <h3>❌ Zablokovaný v setup-e?</h3>
+  <p>Použi <strong>reset</strong> z bodu 8.</p>
+
+  <footer>
+    <p><strong>📌 Poznámka:</strong> Tento návod je založený na súbore <code>Cloud_AI_2024.pdf</code> – zjednodušený, vyčistený a štruktúrovaný.</p>
+  </footer>
+</body>
+</html>
